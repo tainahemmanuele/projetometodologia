@@ -1,0 +1,47 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(dplyr)
+library(stringr)
+library(tokenizers)
+
+
+dados <- read_csv("20181610-reclamacoes-selecionadas.csv")
+aval <- read_csv("avaliacoes-20181030.csv")
+```
+
+## Dados sobre as reclamaÃ§Ãµes.
+
+```{r}
+
+
+dados <- dados %>%
+          select(ID, orgao, título, reclamação) %>%
+          mutate(length_titulo = (str_length(título)-13), length_reclamacao= str_length(reclamação), number_upper_titulo = str_count(título, "[A-Z]"), number_upper_recl=str_count(reclamação, "[A-Z]"))
+
+depoimentos <- dados$reclamação
+
+teste <- depoimentos[3]
+
+#tokenize_words(teste, lowercase = FALSE) %>%
+#  unlist() %>%
+#  table() %>%
+#  sort(decreasing = TRUE)
+
+```
+
+## Sobre os orgÃ£os
+
+```{r}
+
+ordered <- dados[order(dados$length_reclamacao, decreasing=TRUE),]
+
+#head(ordered)
+colnames(aval)[2] <-"ID"
+merge_frames <- merge(x = ordered, y = aval, by = "ID", all = TRUE)
+
+```
