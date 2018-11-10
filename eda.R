@@ -4,16 +4,17 @@ library(rvest)
 library(stringr)
 library(dplyr)
 library(magrittr)
-theme.set(theme_bw())
+library(rvest)
+theme_set(theme_bw())
 
 
 
-avaliacoes <- read.csv('avaliacoes-20181030.csv')
-reclamacoes <-  read.csv("reclamacoes-avaliadas-20180703.csv")
+avaliacoes <- read_csv('avaliacoes-20181030.csv')
+reclamacoes <-  read_csv("reclamacoes-avaliadas-20180703.csv")
 
 #inserindo colunas comprimento da reclamacao e do titulo
-reclamacoes <- reclamacoes %>% mutate(reclamacao.length = str_length(reclamacao),
-                                      titulo.length = str_length(titulo))
+reclamacoes <- reclamacoes %>% mutate(reclamacao.length = str_length(reclama<c3>.<c3>.o),
+                                      titulo.length = str_length(t<c3>.tulo))
 
 # insere coluna com número de letras em capslock
 reclamacoes$numero.de.capslock <- str_count(reclamacoes$reclamacao, "\\b[A-Z]{2,}\\b")
@@ -120,3 +121,4 @@ library(GGally)
 reclamacoes %>% 
   select(orgao, titulo.length, reclamacao.length, numero.de.capslock, mediana) %>% 
   ggpairs()
+
