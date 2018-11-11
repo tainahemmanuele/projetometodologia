@@ -1,64 +1,71 @@
 ---
-title: "whatever"
-output: html_document
+title: "An√°lise Explorat√≥ria Metodologia"
+output: 
+  html_document: default
+  html_notebook: default
+  
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE, warning = FALSE, message = FALSE} 
+#Libraries
 library(readr)
 library(dplyr)
 library(stringr)
 library(plotly)
+library(magrittr)
+library(vegalite)
+```
 
+```{r data, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+#Data
 dados <- read_csv("20181610-reclamacoes-selecionadas.csv")
 aval <- read_csv("avaliacoes-20181030.csv")
 ```
 
-## IntroduÁ„o
+## Introdu√ß√£o
 
-Pretendemos aqui resolver as questıes a seguir com o intuito de traÁar uma relaÁ„o com o Ìndice de insatisfaÁ„o.
+Pretendemos aqui resolver as quest√µes a seguir com o intuito de tra√ßar uma rela√ß√£o com o √≠ndice de insatisfa√ß√£o.
 
 **Perguntas:**
 
-1. Quantidade de caracteres do texto de cada reclamaÁ„o ?
-2. Quantidade de caracteres dos tÌtulos ?
+1. Quantidade de caracteres do texto de cada reclama√ß√£o ?
+2. Quantidade de caracteres dos t√≠tulos ?
 3. Quantidade de caracteres uppercase ?
-4. Quantidade de sinais de exclamaÁ„o ?
-5. Qual Ûrg„o teve mais reclamaÁıes de maior valor(4 ou 5)?
-6. ReclamaÁıes mais curtas tÍm menor pontuaÁ„o de insatisfaÁ„o?
-7. ReclamaÁıes com presenÁa de palavras em caixa alta apresentam grande pontuaÁ„o de insatisfaÁ„o?
-8. Qual Ûrg„o possui mais reclamaÁıes com maior n˙mero de caracteres nos textos?
+4. Quantidade de sinais de exclama√ß√£o ?
+5. Qual √≥rg√£o teve mais reclama√ß√µes de maior valor(4 ou 5)?
+6. Reclama√ß√µes mais curtas t√™m menor pontua√ß√£o de insatisfa√ß√£o?
+7. Reclama√ß√µes com presen√ßa de palavras em caixa alta apresentam grande pontua√ß√£o de insatisfa√ß√£o?
+8. Qual org√£o possui mais reclama√ß√µes com maior n√∫mero de caracteres nos textos?
 
 ## Respondendo perguntas
 
 
-#### Sobre os dados das reclamaÁıes
+#### Sobre os dados das reclama√ß√µes
 
 ```{r}
-
-
 dados <- dados %>%
-          select(ID, orgao, tÌtulo, reclamaÁ„o) %>%
-          mutate(length_titulo = (str_length(tÌtulo)-13), length_reclamacao= str_length(reclamaÁ„o), number_upper_titulo = str_count(tÌtulo, "[A-Z]"), number_upper_recl=str_count(reclamaÁ„o, "[A-Z]"), number_exclamacao=str_count(reclamaÁ„o, "[!]"))
+          select(ID, orgao, t√≠tulo, reclama√ß√£o) %>%
+          mutate(length_titulo = (str_length(t√≠tulo)-13), length_reclamacao= str_length(reclama√ß√£o), number_upper_titulo = str_count(t√≠tulo, "[A-Z]"), number_upper_recl=str_count(reclama√ß√£o, "[A-Z]"), number_exclamacao=str_count(reclama√ß√£o, "[!]"))
 
-depoimentos <- dados$reclamaÁ„o 
+depoimentos <- dados$reclama√ß√£o 
 
 ordered <- dados[order(dados$length_reclamacao, decreasing=TRUE),]
 ordered <- ordered[!is.na(ordered$ID),]
 ```
 
-Nessa parte iremos responder as perguntas **1-4**, para isso utilizei as funÁ„o *str_count, str_lenght* da biblioteca **stringr**,  a seguir os dados ser„o  expostos.
+Nessa parte iremos responder as perguntas **1-4**, para isso utilizamos as fun√ß√µes *str_count, str_lenght* da biblioteca **stringr**,  a seguir os dados ser√£o  expostos.
 
 
-### Sobre os org„os
+### Sobre os org√£os
 
 ```{r}
 #head(ordered)
 
 colnames(aval)[2] <-"ID"
 ren_aval <- aval %>%
-  select(ID, `Grau de insatisfaÁ„o`) %>%
+  select(ID, `Grau de insatisfa√ß√£o`) %>%
   group_by(`ID`) %>% 
-  summarize(avaliacao_media = mean(`Grau de insatisfaÁ„o`), avaliacao_mediana = median(`Grau de insatisfaÁ„o`))
+  summarize(avaliacao_media = mean(`Grau de insatisfa√ß√£o`), avaliacao_mediana = median(`Grau de insatisfa√ß√£o`))
 
 ren_aval <- ren_aval[!is.na(ren_aval$ID),]
 
@@ -70,6 +77,6 @@ qtd_reclamacao <- ordered %>%
 merge_frames <- merge(x = ordered, y = ren_aval, by = "ID", all = TRUE)
 ```
 
-Uma vez possuindo os dados sobre as reclamaÁıes como quantidade de caracteres, iremos responder relacionando com os org„os.
+Uma vez possuindo os dados sobre as reclama√ß√µes como quantidade de caracteres, iremos responder relacionando com os org√£os.
 
 
