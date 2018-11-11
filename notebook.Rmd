@@ -4,40 +4,72 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-library(tidyverse)
-library(rvest)
+library(readr)
+library(dplyr)
 library(stringr)
+library(plotly)
 
-
-avaliacoes <- read_csv("avaliacoes-20181030.csv")
-
-glimpse(avaliacoes)
-
-avaliacoes <- avaliacoes %>% select(matricula = "Matricula", 
-                                    id.reclamacao = "ID da reclamaÃ§Ã£o", 
-                                    avaliacao = "Grau de insatisfaÃ§Ã£o")
-glimpse(avaliacoes)
-
-avaliacoes <- avaliacoes %>% select(id.reclamacao, avaliacao) %>% 
-              group_by(id.reclamacao) %>% 
-              summarise(insatisfacao = median(avaliacao), 
-                        avaliadores = n(),
-                        range.avaliacoes = (max(avaliacao) - min(avaliacao)))
-
-#quantas avaliaÃ§Ãµes tem discordancia de avaliaÃ§Ã£o maior que 2? SerÃ¡ que devemos confiar nessas avaliaÃ§Ãµes?
-avaliacoes %>% filter(range.avaliacoes > 2) 
-
+dados <- read_csv("20181610-reclamacoes-selecionadas.csv")
+aval <- read_csv("avaliacoes-20181030.csv")
 ```
-reclamacoes.avaliadas <- read_csv("data/1-reclamacoes-selecionadas/20180605-reclamacoes-selecionadas_sem-repeticao.csv")
 
-names(reclamacoes.avaliadas)
-names(avaliacoes)
+## Introdução
 
-reclamacoes <- left_join(reclamacoes.avaliadas, avaliacoes, 
-                         by = c("id" = "id.reclamacao"))
+Pretendemos aqui resolver as questões a seguir com o intuito de traçar uma relação com o índice de insatisfação.
 
-reclamacoes %>%  write_csv("data/3-avaliacao-humana/reclamacoes-avaliadas-20180703.csv")
+**Perguntas:**
 
+1. Quantidade de caracteres do texto de cada reclamação ?
+2. Quantidade de caracteres dos títulos ?
+3. Quantidade de caracteres uppercase ?
+4. Quantidade de sinais de exclamação ?
+5. Qual órgão teve mais reclamações de maior valor(4 ou 5)?
+6. Reclamações mais curtas têm menor pontuação de insatisfação?
+7. Reclamações com presença de palavras em caixa alta apresentam grande pontuação de insatisfação?
+8. Qual órgão possui mais reclamações com maior número de caracteres nos textos?
+
+## Respondendo perguntas
+
+
+#### Sobre os dados das reclamações
+
+```{r}
+
+
+dados <- dados %>%
+          select(ID, orgao, título, reclamação) %>%
+          mutate(length_titulo = (str_length(título)-13), length_reclamacao= str_length(reclamação), number_upper_titulo = str_count(título, "[A-Z]"), number_upper_recl=str_count(reclamação, "[A-Z]"), number_exclamacao=str_count(reclamação, "[!]"))
+
+depoimentos <- dados$reclamação 
+
+ordered <- dados[order(dados$length_reclamacao, decreasing=TRUE),]
+ordered <- ordered[!is.na(ordered$ID),]
 ```
+
+Nessa parte iremos responder as perguntas **1-4**, para isso utilizei as função *str_count, str_lenght* da biblioteca **stringr**,  a seguir os dados serão  expostos.
+
+
+### Sobre os orgãos
+
+```{r}
+#head(ordered)
+
+colnames(aval)[2] <-"ID"
+ren_aval <- aval %>%
+  select(ID, `Grau de insatisfação`) %>%
+  group_by(`ID`) %>% 
+  summarize(avaliacao_media = mean(`Grau de insatisfação`), avaliacao_mediana = median(`Grau de insatisfação`))
+
+ren_aval <- ren_aval[!is.na(ren_aval$ID),]
+
+
+qtd_reclamacao <- ordered %>%
+  group_by(orgao) %>%
+  summarize(qtd_reclamacao=n())
+
+merge_frames <- merge(x = ordered, y = ren_aval, by = "ID", all = TRUE)
+```
+
+Uma vez possuindo os dados sobre as reclamações como quantidade de caracteres, iremos responder relacionando com os orgãos.
+
+
