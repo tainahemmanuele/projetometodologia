@@ -1,0 +1,122 @@
+---
+title: "Análise Exploratória Metodologia"
+output: 
+  html_document: default
+  html_notebook: default
+  
+---
+
+```{r libraries, echo=FALSE, warning = FALSE, message = FALSE} 
+#Libraries
+library(readr)
+library(dplyr)
+library(stringr)
+library(plotly)
+library(magrittr)
+library(vegalite)
+library(jsonlite)
+```
+
+```{r readData, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+dados <- read_csv("20181610-reclamacoes-selecionadas.csv")
+aval <- read_csv("avaliacoes-20181030.csv")
+```
+
+## Introdução
+
+Pretendemos aqui resolver as questões a seguir com o intuito de traçar uma relação com o índice de insatisfação.
+
+**Perguntas:**
+
+1. Quantidade de caracteres do texto de cada reclamação ?
+2. Quantidade de caracteres dos títulos ?
+3. Quantidade de caracteres uppercase ?
+4. Quantidade de sinais de exclamação ?
+5. Qual órgão teve mais reclamações de maior valor(4 ou 5)?
+6. Reclamações mais curtas têm menor pontuação de insatisfação?
+7. Reclamações com presença de palavras em caixa alta apresentam grande pontuação de insatisfação?
+8. Qual orgão possui mais reclamações com maior número de caracteres nos textos?
+
+## Respondendo perguntas
+
+
+#### Sobre os dados das reclamações
+
+```{r calcData}
+dados <- dados %>%
+          select(ID, orgao, título, reclamação) %>%
+          mutate(length_titulo = as.integer(str_length(título)-13), length_reclamacao= str_length(reclamação), number_upper_titulo = str_count(título, "[A-Z]"), number_upper_recl=str_count(reclamação, "[A-Z]"), number_exclamacao=str_count(reclamação, "[!]"))
+
+depoimentos <- dados$reclamação 
+
+ordered <- dados[order(dados$length_reclamacao, decreasing=TRUE),]
+ordered <- ordered[!is.na(ordered$ID),]
+```
+
+Nessa parte iremos responder as perguntas **1-4**, para isso utilizamos as funções *str_count, str_lenght* da biblioteca **stringr**,  a seguir os dados serão  expostos.
+```{r visTitleLen}
+
+vegalite() %>%
+  add_data(ordered) %>%
+  encode_x(field = 'ID', type = 'ordinal') %>% 
+  axis_x(title='ID da Reclamação') %>% 
+  encode_y(field = 'length_titulo', type = "quantitative" )  %>%
+  axis_y(title='Caracteres no título') %>% 
+  encode_color(field = 'orgao', type= 'nominal') %>% 
+  legend_color(title='Orgão') %>% 
+  mark_area() -> v1
+
+v1
+```
+```{r visTextLen}
+vegalite() %>% 
+  add_data(ordered) %>% 
+  #view_size(width = 300) %>% 
+  encode_y(field= 'orgao', type = 'ordinal') %>% 
+  axis_y(title='Orgão') %>% 
+  encode_x(field='length_reclamacao', type='quantitative') %>% 
+  axis_x(title='Caracteres no texto da Reclamação') %>% 
+  encode_color(field='orgao', type='nominal') %>% 
+  legend_color(title='Orgão') %>% 
+  mark_tick() -> v2
+
+v2
+```
+```{r visCharUpperRecl}
+vegalite() %>% 
+  add_data(ordered) %>% 
+  #view_size(800,300) %>% 
+  encode_x(field='number_upper_titulo', type='quantitative') %>% 
+  axis_x(title='Caixa alta título') %>% 
+  encode_y(field='number_upper_recl') %>% 
+  axis_y(title='Caixa alta no texto') %>% 
+  encode_color(field='orgao', type='nominal', stack='center') %>% 
+  legend_color(title='Orgão') %>% 
+  mark_bar() -> v3
+
+v3
+```
+### Sobre os orgãos
+
+```{r orgData}
+#head(ordered)
+
+colnames(aval)[2] <-"ID"
+ren_aval <- aval %>%
+  select(ID, `Grau de insatisfação`) %>%
+  group_by(`ID`) %>% 
+  summarize(avaliacao_moda = mode(`Grau de insatisfação`), avaliacao_moda = mode(`Grau de insatisfação`))
+
+ren_aval <- ren_aval[!is.na(ren_aval$ID),]
+
+
+qtd_reclamacao <- ordered %>%
+  group_by(orgao) %>%
+  summarize(qtd_reclamacao=n())
+
+merge_frames <- merge(x = ordered, y = ren_aval, by = "ID", all = TRUE)
+```
+
+Uma vez possuindo os dados sobre as reclamações como quantidade de caracteres, iremos responder relacionando com os orgãos.
+
+
