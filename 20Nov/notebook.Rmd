@@ -18,7 +18,6 @@ library(jsonlite)
 ```
 
 ```{r readData, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
-#Data
 dados <- read_csv("20181610-reclamacoes-selecionadas.csv")
 aval <- read_csv("avaliacoes-20181030.csv")
 ```
@@ -57,7 +56,7 @@ ordered <- ordered[!is.na(ordered$ID),]
 Nessa parte iremos responder as perguntas **1-4**, para isso utilizamos as funções *str_count, str_lenght* da biblioteca **stringr**,  a seguir os dados serão  expostos.
 ```{r visTitleLen}
 
-vegalite(export =TRUE) %>%
+vegalite() %>%
   add_data(ordered) %>%
   encode_x(field = 'ID', type = 'ordinal') %>% 
   axis_x(title='ID da Reclamação') %>% 
@@ -69,12 +68,10 @@ vegalite(export =TRUE) %>%
 
 v1
 ```
-Podemos observar que as reclamações vindas da ANAC têm maior quantidade de caracteres em seu título do que as reclamações vindas do INSS.
-
 ```{r visTextLen}
-vegalite(export =TRUE) %>% 
+vegalite() %>% 
   add_data(ordered) %>% 
-  view_size(width = 300) %>% 
+  #view_size(width = 300) %>% 
   encode_y(field= 'orgao', type = 'ordinal') %>% 
   axis_y(title='Orgão') %>% 
   encode_x(field='length_reclamacao', type='quantitative') %>% 
@@ -85,12 +82,10 @@ vegalite(export =TRUE) %>%
 
 v2
 ```
-É possível observar que as concentrações das reclamações vindas dos dois orgãos estão em um intervalo próximo em relação a quantidade de caracteres presentes no texto. Porém há uma tendência das reclamações vindas da ANAC a serem mais longas.
-
 ```{r visCharUpperRecl}
-vegalite(export =TRUE) %>% 
+vegalite() %>% 
   add_data(ordered) %>% 
-  view_size(800,300) %>% 
+  #view_size(800,300) %>% 
   encode_x(field='number_upper_titulo', type='quantitative') %>% 
   axis_x(title='Caixa alta título') %>% 
   encode_y(field='number_upper_recl') %>% 
@@ -101,8 +96,6 @@ vegalite(export =TRUE) %>%
 
 v3
 ```
-Observa-se que não há, visualmente, uma correlação linear entre a quantidade de palavras caixa alta no título e texto da reclamação. Nota-se também que reclamações advindas do INSS tendem a ter maior uso de caixa alta nos títulos e também no corpo das reclamações em relação às reclamações da ANAC.
-
 ### Sobre os orgãos
 
 ```{r orgData}
@@ -112,7 +105,7 @@ colnames(aval)[2] <-"ID"
 ren_aval <- aval %>%
   select(ID, `Grau de insatisfação`) %>%
   group_by(`ID`) %>% 
-  summarize(avaliacao_media = mean(`Grau de insatisfação`), avaliacao_mediana = median(`Grau de insatisfação`))
+  summarize(avaliacao_moda = mode(`Grau de insatisfação`), avaliacao_moda = mode(`Grau de insatisfação`))
 
 ren_aval <- ren_aval[!is.na(ren_aval$ID),]
 
@@ -125,44 +118,5 @@ merge_frames <- merge(x = ordered, y = ren_aval, by = "ID", all = TRUE)
 ```
 
 Uma vez possuindo os dados sobre as reclamações como quantidade de caracteres, iremos responder relacionando com os orgãos.
-
-
-5. Qual órgão teve mais reclamações de maior valor(4 ou 5)?
-6. Reclamações mais curtas têm menor pontuação de insatisfação?
-7. Reclamações com presença de palavras em caixa alta apresentam grande pontuação de insatisfação?
-
-
-```{r avaliacaoPorOrgQntChar}
-vegalite( export =TRUE) %>% 
-  add_data(merge_frames) %>% 
-  view_size(800,300) %>% 
-  encode_x(field='avaliacao_media', type='quantitative') %>% 
-  axis_x(title='Média de insatisfação da avaliação') %>% 
-  encode_y(field='length_reclamacao', type='quantitative') %>% 
-  axis_y(title='Quantidade de caracteres no texto') %>% 
-  encode_color(field='orgao', type='nominal') %>% 
-  legend_color(title='Orgão') %>% 
-  mark_bar() -> v5
-
-v5
-
-```
-
-
-
-```{r avaliacaoPorCaixaAltaPorOrg}
-vegalite( export =TRUE) %>% 
-  add_data(merge_frames) %>% 
-  view_size(800,300) %>% 
-  encode_x(field='avaliacao_media', type='quantitative') %>% 
-  axis_x(title='Média de insatisfação da avaliação') %>% 
-  encode_y(field='number_upper_recl', type='quantitative') %>% 
-  axis_y(title='Quantidade de caracteres no texto') %>% 
-  encode_color(field='orgao', type='nominal') %>% 
-  legend_color(title='Orgão') %>% 
-  mark_bar() -> v5
-
-v5
-```
 
 
