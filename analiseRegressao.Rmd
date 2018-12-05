@@ -20,6 +20,20 @@ sentimentos = read_csv(here("sentimento.csv"))
 reclamacoes = reclamacoes %>% mutate(comprimento_reclamacao = str_length(reclamacao))
 ```
 
+```{r incrementando}
+
+#inserindo colunas comprimento da reclamacao, do titulo e quantidade de exclamações
+reclamacoes <- reclamacoes %>% mutate(reclamacao.length = str_length(reclamacao),
+                                      titulo.length = str_length(titulo),
+                                      numero.de.capslock = str_count(reclamacao,"[A-Z]"),
+                                      reclamacao.qtdExclamacao = str_count(reclamacao, "[!]"),
+                                      reclamacao.qtdNums = str_count(reclamacao,"[0-9]+"),
+                                      reclamacao.qtdInterrogacao = str_count(reclamacao,"[?]"))
+
+
+
+```
+
 `reclamacoes_l` tem um formato long em vez de wide (explicado [aqui](https://sejdemyr.github.io/r-tutorials/basics/wide-and-long/)).
 
 
@@ -88,24 +102,28 @@ reclamacoes_l %>%
 
 
 ## Há relação entre o léxico e o erro?
-
 Agora um modelo para responder sua pergunta.
+```{r}
+modelo1 = lm(insatisfacao ~ normalizados, data = reclamacoes_l)
 
-```{r incrementando}
+tidy(modelo1, conf.int = TRUE, conf.level = 0.95)
+glance(modelo1)
+```
 
-#inserindo colunas comprimento da reclamacao, do titulo e quantidade de exclamações
-reclamacoes <- reclamacoes %>% mutate(reclamacao.length = str_length(reclamacao),
-                                      titulo.length = str_length(titulo),
-                                      reclamacao.qtdExclamacao = str_count(reclamacao, "[!]"),
-                                      reclamacao.qtdNums = str_count(reclamacao,"[0-9]+"),
-                                      reclamacao.qtdInterrogacao = str_count(reclamacao,"[?]"))
+```{r}
+reclamacoes_augmented = reclamacoes_l %>% 
+  add_predictions(modelo1) 
 
-# insere coluna com número de letras em capslock
-reclamacoes$numero.de.capslock <- str_count(reclamacoes$reclamacao, "\\b[A-Z]{2,}\\b")
-
-
+reclamacoes_augmented %>% 
+  ggplot(aes(x = normalizados)) + 
+  geom_line(aes(y = pred), colour = "brown") + 
+  geom_point(aes(y = insatisfacao)) + 
+  labs(y = "Insatisfação")
 
 ```
+    Para encontrar uma relação entre o léxico e o erro, criou-se um modelo que realiza a regressão entre normalizados(Valores do lexico) e insatisfaçao(mediana dos voluntários), observando o R² com valor bem próximo a 0, chega-se a conclusão que nao existe relação entre as variáveis, sendo elas independentes.
+
+
 
 ```{r}
 #Cria variável dummy para preditor categórico
@@ -115,12 +133,14 @@ reclamacoes_l = reclamacoes_l %>% mutate(lexico.dummy = if_else(lexico == "senti
 reclamacoes_l = reclamacoes_l %>% mutate(orgao.dummy = if_else(orgao == "inss-ministerio-da-previdencia-social", 1, 0))
 
 #GGally::ggpairs(reclamacoes_l %>% select(orgao.dummy, normalizados, erro, titulo.length, numero.de.capslock, comprimento_reclamacao, lexico.dummy))
-GGally::ggcorr(data = reclamacoes_l, label = TRUE)
+ggcorr(data = reclamacoes_l, geom = "blank", label = "True", hjust = 0.90, size=3, layout.exp = 0.3) +
+  geom_point(size = 10, aes(color = coefficient > 0, alpha = abs(coefficient) > 0.2)) +
+  scale_alpha_manual(values = c("TRUE" = 0.25, "FALSE" = 0)) +
+  guides(color = FALSE, alpha = FALSE)
+
 lm1 = lm(insatisfacao ~  numero.de.capslock+comprimento_reclamacao+titulo.length+erro+reclamacao.qtdExclamacao+polaridade_normalizada+reclamacao.qtdNums, data = reclamacoes_l)
 tidy(lm1, conf.int = TRUE, conf.level = 0.95)
 glance(lm1)
 ```
 
-**Dica** - o texto de resultado que queremos produzir é algo como: 
-
-Regressão múltipla foi utilizada para analisar se VarIndep1 e VarIndep2 tem uma associação significativa com o erro na estimativa de instatisfação da reclemação. Os resultados da regressão indicam que um modelo com os 2 preditores no formato Erro = XXX.VarIndep1 + YYY.VarIndep2 explicam XX,XX% da variância da variável de resposta (R2 = XX,XX). VarIndep1, medida como/em [unidade ou o que é o 0 e o que é 1] tem uma relação significativa com o erro (b = [yy,yy;  zz,zz], IC com 95%), assim como VarIndep2 medida como [unidade ou o que é o 0 e o que é 1] (b = [yy,yy;  zz,zz], IC com 95%). O aumento de 1 unidade de VarIndep1 produz uma mudança de...
+Regressão múltipla foi utilizada para analisar se as variáveis: **Quantidade de caracteres em caixa alta, Quantidade de caracteres do texto e do título da reclamação, Quantidade de exclamações e números**, possuem uma associação significativa com o erro na estimativa de instatisfação da reclamação. Os resultados da regressão indicam através do *r²*(0.505) que modelo não faz uma boa representação dos dados.
