@@ -132,11 +132,12 @@ reclamacoes_l = reclamacoes_l %>% mutate(lexico.dummy = if_else(lexico == "senti
 #Você pode também criar uma variável dummy para o órgao (se anac ou inss)
 reclamacoes_l = reclamacoes_l %>% mutate(orgao.dummy = if_else(orgao == "inss-ministerio-da-previdencia-social", 1, 0))
 
-#GGally::ggpairs(reclamacoes_l %>% select(orgao.dummy, normalizados, erro, titulo.length, numero.de.capslock, comprimento_reclamacao, lexico.dummy))
 GGally::ggcorr(data = reclamacoes_l, label = TRUE)
-lm1 = lm(insatisfacao ~  numero.de.capslock+comprimento_reclamacao+titulo.length+erro+reclamacao.qtdExclamacao+polaridade_normalizada+reclamacao.qtdNums, data = reclamacoes_l)
-tidy(lm1, conf.int = TRUE, conf.level = 0.95)
-glance(lm1)
+lm_reclamacao  = lm(insatisfacao ~  numero.de.capslock + comprimento_reclamacao + titulo.length + erro +
+                        reclamacao.qtdExclamacao + polaridade_normalizada + reclamacao.qtdNums,
+                        data = reclamacoes_l)
+tidy(lm_reclamacao , conf.int = TRUE, conf.level = 0.95)
+glance(lm_reclamacao )
 ```
 
 Regressão múltipla foi utilizada para analisar se as variáveis: **quantidade de caracteres em caixa alta, quantidade de caracteres do texto e do título da reclamação, quantidade de exclamações e números**, possuem uma associação significativa com o erro na estimativa de instatisfação da reclamação. Os resultados da regressão indicam através do *r²*(0.505) que modelo não faz uma boa representação dos dados.
